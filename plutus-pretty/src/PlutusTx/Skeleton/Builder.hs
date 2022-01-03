@@ -1,22 +1,13 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# OPTIONS_GHC -fno-specialize #-}
 
-module PlutusTx.Skeleton.Builder (build, renderSkeleton) where
+module PlutusTx.Skeleton.Builder (renderSkeleton) where
 
 import PlutusTx.Prelude
-import PlutusTx.Skeleton.Internal (
-  Skeleton (
-    BoolS,
-    ConS,
-    IntegerS,
-    ListS,
-    RecS,
-    StringS,
-    TupleS
-  ),
- )
+import PlutusTx.Skeleton.Internal (Skeleton (runSkeleton))
 import PlutusTx.Skeleton.String (intToString)
 
+{-
 newtype Builder = Builder [BuiltinString]
   deriving (Semigroup, Monoid) via [BuiltinString]
 
@@ -26,9 +17,68 @@ build (Builder xs) = foldr go "" xs
   where
     go :: BuiltinString -> BuiltinString -> BuiltinString
     go x acc = x <> acc
+-}
 
 {-# INLINEABLE renderSkeleton #-}
-renderSkeleton :: Skeleton -> Builder
+renderSkeleton :: Skeleton -> BuiltinString
+renderSkeleton sk =
+  runSkeleton
+    sk
+    renderBool
+    renderInteger
+    renderString
+    renderCon
+    renderRec
+    renderTup
+    renderList
+  where
+    renderBool :: Bool -> BuiltinString
+    renderBool b = if b then "true" else "false"
+    renderInteger :: Integer -> BuiltinString
+    renderInteger = intToString
+    renderString :: BuiltinString -> BuiltinString
+    renderString s = "\"" <> s <> "\""
+    renderCon :: BuiltinString -> [BuiltinString] -> BuiltinString
+    renderCon name args =
+      "{ \"tag\": \""
+        <> name
+        <> "\", \"arguments\": "
+        <> renderArray args
+        <> " }"
+    renderRec :: BuiltinString -> [(BuiltinString, BuiltinString)] -> BuiltinString
+    renderRec name fieldVals =
+      "{ \"recordTag\": \""
+        <> name
+        <> "\", \"fields\": "
+        <> renderFieldVals fieldVals
+        <> " }"
+    renderTup :: BuiltinString -> BuiltinString -> Maybe BuiltinString -> BuiltinString
+    renderTup x y mz =
+      "{ \"fst\": " <> x <> ", \"snd\": " <> y <> case mz of
+        Nothing -> " }"
+        Just z -> ", \"thd\": " <> z <> " }"
+    renderList :: [BuiltinString] -> BuiltinString
+    renderList = renderArray
+
+{-# INLINEABLE renderArray #-}
+renderArray :: [BuiltinString] -> BuiltinString
+renderArray xs = "[ " <> go xs <> " ]"
+  where
+    go :: [BuiltinString] -> BuiltinString
+    go = \case
+      [] -> ""
+      (y : ys) -> y <> ", " <> go ys
+
+{-# INLINEABLE renderFieldVals #-}
+renderFieldVals :: [(BuiltinString, BuiltinString)] -> BuiltinString
+renderFieldVals fieldVals = "{ " <> go fieldVals <> " }"
+  where
+    go :: [(BuiltinString, BuiltinString)] -> BuiltinString
+    go = \case
+      [] -> ""
+      (k, v) : kvs -> "\"" <> k <> "\": " <> v <> ", " <> go kvs
+
+{-
 renderSkeleton = \case
   BoolS b -> embed (if b then "true" else "false")
   IntegerS i -> embed (intToString i)
@@ -97,4 +147,4 @@ infixl 6 <+>
 
 {-# INLINEABLE embed #-}
 embed :: BuiltinString -> Builder
-embed s = Builder [s]
+embed s = Builder [s] -}

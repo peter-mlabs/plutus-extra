@@ -16,9 +16,6 @@ module PlutusTx.Skeleton (
   Skeleton,
   Skeletal (skeletize),
 
-  -- * TH helper
-  makeSkeletal,
-
   -- * Functions
   showSkeletal,
   traceSkeletal,
@@ -29,9 +26,8 @@ module PlutusTx.Skeleton (
 
 import Data.Kind (Type)
 import PlutusTx.Prelude
-import PlutusTx.Skeleton.Builder (build, renderSkeleton)
+import PlutusTx.Skeleton.Builder (renderSkeleton)
 import PlutusTx.Skeleton.Internal (Skeletal (skeletize), Skeleton)
-import PlutusTx.Skeleton.QQ (makeSkeletal)
 
 {- | Constructs a prettyprinted 'BuiltinString' representation of any type with
  a 'Skeletal' instance.
@@ -82,7 +78,7 @@ showSkeletal ::
   (Skeletal a) =>
   a ->
   BuiltinString
-showSkeletal = build . renderSkeleton . skeletize
+showSkeletal = renderSkeleton . skeletize
 
 {- | As 'trace', but for any 'Skeletal'. Will trace the representation emitted
  by 'showSkeletal'.
